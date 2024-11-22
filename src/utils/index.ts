@@ -1,6 +1,6 @@
-export const getRandomTriviaLocal = async function() {
+export const getRandomTriviaLocal = async () => {
     console.log("Trying local fetch...");
-    return fetch("mock/localtrivia.json")
+    return fetch("/localtrivia.json")
     .then(resp => resp.json())
     .then(data => {
         let index = Math.floor(Math.random() * data.length);
@@ -8,9 +8,9 @@ export const getRandomTriviaLocal = async function() {
     })
 } 
 
-export const getRandomMathLocal = async function() {
+export const getRandomMathLocal = async () => {
     console.log("Trying local fetch...");
-    return fetch("mock/localmath.json")
+    return fetch("/localmath.json")
     .then(resp => resp.json())
     .then(data => {
         let index = Math.floor(Math.random() * data.length);

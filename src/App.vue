@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { Score, QuizResult } from './types'
-import { compareStrings } from './utils'
+import { compareStrings, getRandomTriviaLocal, getRandomMathLocal } from './utils'
 
 const fact = ref('')
 const number = ref(null)
@@ -28,7 +28,7 @@ const nonPhraseLetters = computed(() => {
 
 const fetchData = async () => {
   try {
-    const res = await fetch('http://numbersapi.com/random/math?json&fragment')
+    const res = await fetch('https://numbersapi.com/random/math?json&fragment')
     const data = await res.json()
     fact.value = data.text
     number.value = data.number
@@ -38,7 +38,16 @@ const fetchData = async () => {
     showRes.value = false
     inputNumber.value = null
   } catch (err) {
-    console.error('Error fetching data:', err)
+    const localFetch = Math.random() < 0.5 ? getRandomTriviaLocal : getRandomMathLocal
+    const data = await localFetch()
+
+    fact.value = data.text
+    number.value = data.number
+    revealed.value = fact.value.replace(/[a-z]/gi, '_')
+    guessedLetters.value = new Set()
+    score.value = 26
+    showRes.value = false
+    inputNumber.value = null
   }
 }
 
