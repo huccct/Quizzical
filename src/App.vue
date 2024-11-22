@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { Score } from '@/types'
 
 const fact = ref('')
 const number = ref(null)
@@ -8,7 +9,7 @@ const inputNumber = ref(null)
 const score = ref(26)
 const guessedLetters = ref(new Set())
 const showRes = ref(false)
-const scores = ref([])
+const scores = ref<Score[]>([])
 const sortKey = ref('score')
 const sortOrder = ref('desc')
 const quizMode = ref(false)
@@ -28,7 +29,6 @@ const fetchData = async () => {
   try {
     const res = await fetch('http://numbersapi.com/random/math?json&fragment')
     const data = await res.json()
-    console.log(data);
     fact.value = data.text
     number.value = data.number
     revealed.value = fact.value.replace(/[a-z]/gi, '_')
