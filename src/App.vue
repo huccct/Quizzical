@@ -1,357 +1,157 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
-import { Score, QuizResult } from './types'
-import { compareStrings, getRandomTriviaLocal, getRandomMathLocal } from './utils'
+import type { QuizResult, Score } from './types'
+import { ref } from 'vue'
+import LeaderBoard from './components/LeaderBoard.vue'
+import MainGame from './components/MainGame.vue'
+import Quiz from './components/Quiz.vue'
 
-const fact = ref('')
-const number = ref(null)
-const revealed = ref('')
-const inputNumber = ref(null)
-const score = ref(26)
-const guessedLetters = ref(new Set())
-const showRes = ref(false)
 const scores = ref<Score[]>([])
-const sortKey = ref('score')
-const sortOrder = ref('desc')
 const quizMode = ref(false)
 const quizAnswers = ref<(number | null)[]>([])
 const quizResults = ref<QuizResult[] | null>(null)
+const showLeaderboard = ref(true)
+const showScoreboard = ref(true)
 
-// 一个包含短语中所有不同字母的集合
-const phraseLetters = computed(() => new Set(fact.value.replace(/[^a-z]/gi, '').toLowerCase()))
-
-// 一个包含所有不在短语中的字母的数组
-const nonPhraseLetters = computed(() => {
-  const allLetters = 'abcdefghijklmnopqrstuvwxyz'
-  return allLetters.split('').filter(letter => !phraseLetters.value.has(letter))
-})
-
-const fetchData = async () => {
-  try {
-    const res = await fetch('https://numbersapi.com/random/math?json&fragment')
-    const data = await res.json()
-    fact.value = data.text
-    number.value = data.number
-    revealed.value = fact.value.replace(/[a-z]/gi, '_')
-    guessedLetters.value = new Set() // 重置 guessedLetters 为新的空集合
-    score.value = 26 // 重置分数为初始值
-    showRes.value = false
-    inputNumber.value = null
-  } catch (err) {
-    const localFetch = Math.random() < 0.5 ? getRandomTriviaLocal : getRandomMathLocal
-    const data = await localFetch()
-
-    fact.value = data.text
-    number.value = data.number
-    revealed.value = fact.value.replace(/[a-z]/gi, '_')
-    guessedLetters.value = new Set()
-    score.value = 26
-    showRes.value = false
-    inputNumber.value = null
-  }
-}
-
-const saveScore = () => {
-  if (number.value !== null) {
-    const newScore = {
-      score: score.value,
-      number: number.value,
-      phrase: fact.value
-    }
-    scores.value.push(newScore)
-    localStorage.setItem('quizzicalScores', JSON.stringify(scores.value))
-  }
-}
-
-const loadScores = () => {
+function loadScores() {
   const storedScores = localStorage.getItem('quizzicalScores')
-  if (storedScores) {
+  if (storedScores)
     scores.value = JSON.parse(storedScores)
-  }
 }
 
-const handleKeyPress = (event: KeyboardEvent) => {
-  const letter = event.key.toLowerCase()
-  if (/^[a-z]$/.test(letter) && !guessedLetters.value.has(letter)) {
-    guessLetter(letter)
-  }
+function saveScore(score: Score) {
+  scores.value.push(score)
+  localStorage.setItem('quizzicalScores', JSON.stringify(scores.value))
+  showLeaderboard.value = true
+  showScoreboard.value = true
 }
 
-onMounted(() => {
-  fetchData()
-  loadScores()
-  window.addEventListener('keypress', handleKeyPress)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keypress', handleKeyPress)
-})
-
-const guessLetter = (letter: string) => {
-  if (!revealed.value) {
-    revealed.value = fact.value.replace(/[a-z]/gi, '_')
-  }
-  guessedLetters.value.add(letter.toLowerCase())
-  revealed.value = fact.value.replace(/[a-z]/gi, (match) =>
-    guessedLetters.value.has(match.toLowerCase()) ? match : '_'
-  )
-  if (!fact.value.toLowerCase().includes(letter.toLowerCase())) {
-    score.value = Math.max(score.value - 26 / nonPhraseLetters.value.length, 0)
-  }
-}
-
-const isLetterCorrect = (letter: string) => {
-  return fact.value.toLowerCase().includes(letter.toLowerCase())
-}
-
-const submitAnswer = () => {
-  const gotPhrase = revealed.value.toLowerCase() === fact.value.toLowerCase()
-  const gotNumber = inputNumber.value === number.value
-
-  if (gotPhrase && gotNumber) {
-    alert('Congratulations! You got both the phrase and number correct!')
-    score.value = Math.min(score.value + 4, 30)
-  } else if (gotPhrase || gotNumber) {
-    alert(`You got the ${gotPhrase ? 'phrase' : 'number'} correct, but not the ${gotPhrase ? 'number' : 'phrase'}. Your score has been halved.`)
-    score.value = Math.floor(score.value / 2)
-  } else {
-    alert('Sorry, you got both the phrase and number wrong. Your score is now 0.')
-    score.value = 0
-  }
-  showRes.value = true
-  inputNumber.value = null
-  saveScore()
-}
-
-const sortedScores = computed(() => {
-  return scores.value.sort((a: Score, b: Score) => {
-    const aValue = a[sortKey.value];
-    const bValue = b[sortKey.value];
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      if (sortOrder.value === 'asc') {
-        return compareStrings(aValue, bValue);
-      } else {
-        return compareStrings(bValue, aValue);
-      }
-    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-      if (sortOrder.value === 'asc') {
-        return aValue - bValue;
-      } else {
-        return bValue - aValue;
-      }
-    } else {
-      return 0;
-    }
-  })
-})
-
-const startQuiz = () => {
+function startQuiz() {
   quizMode.value = true
-  quizAnswers.value = new Array(scores.value.length).fill(null)
+  quizAnswers.value = Array.from({ length: scores.value.length }, () => null)
 }
 
-const checkQuizAnswers = () => {
+function checkQuizAnswers() {
   quizResults.value = quizAnswers.value.map((answer, index) => ({
     userAnswer: answer,
-    isCorrect: answer === scores.value[index].number
+    isCorrect: answer === scores.value[index].number,
   }))
   quizMode.value = false
 }
 
-const resetQuiz = () => {
+function resetQuiz() {
   quizResults.value = null
 }
+
+function handleStartGame() {
+  showScoreboard.value = false
+  showLeaderboard.value = false
+}
+
+loadScores()
 </script>
 
-
 <template>
-  <div class="game-container">
-    <h1>Quizzical</h1>
-    <p>Work out what the clue is, then work out what number is being described!</p>
-    <button @click="fetchData" aria-label="Start a new game">Start Game</button>
-
-    <div class="letter-buttons">
-      <button v-for="letter in 'abcdefghijklm'" :key="letter" @click="guessLetter(letter)" :class="{
-        'correct': guessedLetters.has(letter) && isLetterCorrect(letter),
-        'incorrect': guessedLetters.has(letter) && !isLetterCorrect(letter)
-      }" :disabled="guessedLetters.has(letter)">
-        <span :class="{ 'strikethrough': guessedLetters.has(letter) }">
-          {{ letter }}
-        </span>
-      </button>
-    </div>
-
-    <div class="letter-buttons">
-      <button v-for="letter in 'nopqrstuvwxyz'" :key="letter" @click="guessLetter(letter)" :class="{
-        'correct': guessedLetters.has(letter) && isLetterCorrect(letter),
-        'incorrect': guessedLetters.has(letter) && !isLetterCorrect(letter)
-      }" :disabled="guessedLetters.has(letter)">
-        <span :class="{ 'strikethrough': guessedLetters.has(letter) }">
-          {{ letter }}
-        </span>
-      </button>
-    </div>
-
-    <template v-if="!showRes">
-      <div class="clue-container">
-        <b>Clue:</b>
-        <div class="phrase">{{ revealed }}</div>
-      </div>
-
-      <div class="answer-container">
-        <label for="number-input">Answer:</label>
-        <input type="number" id="number-input" v-model="inputNumber" />
-        <span>&nbsp;is&nbsp;</span>
-        <div class="phrase">{{ revealed }}</div>
-      </div>
-
-      <div class="score-container">
-        <b>Score:</b> {{ score.toFixed(2) }}
-      </div>
-
-      <button @click="submitAnswer" aria-label="Submit your answer">Submit Answer</button>
-    </template>
-    <template v-else-if="!quizMode && !quizResults">
-      <h2>Scoreboard</h2>
-      <div class="sort-controls">
-        <label for="sort-key">Sort by:</label>
-        <select id="sort-key" v-model="sortKey" aria-label="Select a field to sort by">
-          <option value="score">Score</option>
-          <option value="number">Number</option>
-          <option value="phrase">Phrase</option>
-        </select>
-        <div role="radiogroup" aria-label="Select sort order">
-          <label>
-            <input type="radio" value="asc" v-model="sortOrder"> Ascending
-          </label>
-          <label>
-            <input type="radio" value="desc" v-model="sortOrder"> Descending
-          </label>
-        </div>
-      </div>
-      <table>
-        <caption>Scoreboard</caption>
-        <thead>
-          <tr>
-            <th scope="col">Score</th>
-            <th scope="col">Number</th>
-            <th scope="col">Phrase</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(scoreItem, index) in sortedScores" :key="index">
-            <td>{{ scoreItem.score.toFixed(2) }}</td>
-            <td>{{ scoreItem.number }}</td>
-            <td>{{ scoreItem.phrase }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <button @click="startQuiz" :disabled="scores.length === 0">Quiz Me</button>
-    </template>
-
-    <template v-if="quizMode">
-      <h2>Quiz</h2>
-      <p>Enter the number for each phrase:</p>
-      <ul>
-        <li v-for="(scoreItem, index) in scores" :key="index">
-          <p>{{ scoreItem.phrase }}</p>
-          <input type="number" v-model.number="quizAnswers[index]">
-        </li>
-      </ul>
-      <button @click="checkQuizAnswers">Check Answers</button>
-    </template>
-
-    <template v-if="quizResults">
+  <MainGame v-if="!quizMode && !quizResults" @save-score="saveScore" @start-game="handleStartGame" />
+  <LeaderBoard
+    v-if="showLeaderboard"
+    :scores="scores"
+    :quiz-answers="quizAnswers"
+    :show-scoreboard="showScoreboard"
+    @start-quiz="startQuiz"
+  />
+  <Quiz
+    v-if="quizMode"
+    :scores="scores"
+    :quiz-answers="quizAnswers"
+    @check-quiz-answers="checkQuizAnswers"
+  />
+  <template v-if="quizResults">
+    <div class="quiz-results">
       <h2>Quiz Results</h2>
       <ul>
         <li v-for="(result, index) in quizResults" :key="index">
           <p>{{ scores[index].phrase }}</p>
           <p>Your answer: {{ result.userAnswer }}, Correct answer: {{ scores[index].number }}</p>
-          <p>{{ result.isCorrect ? 'Correct!' : 'Incorrect' }}</p>
+          <p :class="{ correct: result.isCorrect }">
+            {{ result.isCorrect ? 'Correct!' : 'Incorrect' }}
+          </p>
         </li>
       </ul>
-      <button @click="resetQuiz">Back to Scoreboard</button>
-    </template>
-  </div>
+      <button @click="resetQuiz">
+        Back to Scoreboard
+      </button>
+    </div>
+  </template>
 </template>
 
 <style scoped>
-.game-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  overflow-x: auto;
+.quiz-results {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.clue-container,
-.answer-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  margin-top: 20px;
-  flex-wrap: nowrap;
-}
-
-.clue-container b,
-.answer-container b {
-  margin-right: 10px;
-}
-
-.phrase {
-  font-size: 24px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 4px 8px;
-  min-width: 200px;
-  display: inline-block;
+h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
   text-align: center;
-  margin-right: 10px;
 }
 
-.letter-buttons {
-  margin-top: 10px;
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.letter-buttons button {
-  margin: 5px;
-  width: 30px;
+li {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.letter-buttons button.correct {
-  background-color: green;
+li p {
+  margin: 0.5rem 0;
+}
+
+li p:first-child {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+li p:last-child {
+  color: #4caf50;
+}
+
+li p:last-child:not(.correct) {
+  color: #f44336;
+}
+
+button {
+  display: block;
+  margin: 2rem auto 0;
+  padding: 0.75rem 1.5rem;
+  background-color: #007bff;
   color: white;
-}
-
-.letter-buttons button.incorrect {
-  background-color: red;
-  color: white;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-  margin-top: 20px;
-}
-
-th,
-td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
-}
-
-th {
-  background-color: #f2f2f2;
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
 }
 
-.sort-controls {
-  margin-bottom: 10px;
+button:hover {
+  background-color: #0056b3;
 }
 
-.sort-controls label {
-  margin-right: 10px;
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 }
 </style>
