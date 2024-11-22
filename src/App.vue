@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { Score, QuizResult } from './types'
+import { compareStrings } from './utils'
 
 const fact = ref('')
 const number = ref(null)
@@ -115,10 +116,21 @@ const submitAnswer = () => {
 
 const sortedScores = computed(() => {
   return scores.value.sort((a: Score, b: Score) => {
-    if (sortOrder.value === 'asc') {
-      return a[sortKey.value] - b[sortKey.value]
+    const aValue = a[sortKey.value];
+    const bValue = b[sortKey.value];
+
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      if (sortOrder.value === 'asc') {
+        return compareStrings(aValue, bValue);
+      } else {
+        return compareStrings(bValue, aValue);
+      }
     } else {
-      return b[sortKey.value] - a[sortKey.value]
+      if (sortOrder.value === 'asc') {
+        return a[sortKey.value] - b[sortKey.value]
+      } else {
+        return b[sortKey.value] - a[sortKey.value]
+      }
     }
   })
 })

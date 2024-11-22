@@ -17,3 +17,7 @@ export const getRandomMathLocal = async function() {
         return data[index];
     })
 }
+
+export const compareStrings = (a: string, b: string): number => {
+  return a.localeCompare(b);
+}
