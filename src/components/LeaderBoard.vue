@@ -40,8 +40,9 @@ const sortedScores = computed(() => {
 
 function toggleQuiz() {
   showQuiz.value = !showQuiz.value
-  if (showQuiz.value)
-    quizAnswers.value = Array.from({ length: props.scores.length }).fill(null)
+  if (showQuiz.value) {
+    quizAnswers.value = Array.from({ length: props.scores.length }, () => null) as (number | null)[]
+  }
 }
 
 function checkAnswers() {

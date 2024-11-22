@@ -41,10 +41,9 @@ async function fetchData() {
     inputNumber.value = null
     emit('startGame')
   }
-  catch (err) {
+  catch {
     const localFetch = Math.random() < 0.5 ? getRandomTriviaLocal : getRandomMathLocal
     const data = await localFetch()
-
     fact.value = data.text
     number.value = data.number
     revealed.value = fact.value.replace(/[a-z]/gi, '_')
