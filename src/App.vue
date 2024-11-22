@@ -42,13 +42,15 @@ const fetchData = async () => {
 }
 
 const saveScore = () => {
-  const newScore = {
-    score: score.value,
-    number: number.value,
-    phrase: fact.value
+  if (number.value !== null) {
+    const newScore = {
+      score: score.value,
+      number: number.value,
+      phrase: fact.value
+    }
+    scores.value.push(newScore)
+    localStorage.setItem('quizzicalScores', JSON.stringify(scores.value))
   }
-  scores.value.push(newScore)
-  localStorage.setItem('quizzicalScores', JSON.stringify(scores.value))
 }
 
 const loadScores = () => {
