@@ -11,6 +11,9 @@ const showRes = ref(false)
 const scores = ref([])
 const sortKey = ref('score')
 const sortOrder = ref('desc')
+const quizMode = ref(false)
+const quizAnswers = ref([])
+const quizResults = ref(null)
 
 // 一个包含短语中所有不同字母的集合
 const phraseLetters = computed(() => new Set(fact.value.replace(/[^a-z]/gi, '').toLowerCase()))
@@ -121,6 +124,23 @@ const sortedScores = computed(() => {
     }
   })
 })
+
+const startQuiz = () => {
+  quizMode.value = true
+  quizAnswers.value = new Array(scores.value.length).fill(null)
+}
+
+const checkQuizAnswers = () => {
+  quizResults.value = quizAnswers.value.map((answer, index) => ({
+    userAnswer: answer,
+    isCorrect: answer === scores.value[index].number
+  }))
+  quizMode.value = false
+}
+
+const resetQuiz = () => {
+  quizResults.value = null
+}
 </script>
 
 
@@ -171,7 +191,7 @@ const sortedScores = computed(() => {
 
       <button @click="submitAnswer" aria-label="Submit your answer">Submit Answer</button>
     </template>
-    <template v-else>
+    <template v-else-if="!quizMode && !quizResults">
       <h2>Scoreboard</h2>
       <div class="sort-controls">
         <label for="sort-key">Sort by:</label>
@@ -206,6 +226,31 @@ const sortedScores = computed(() => {
           </tr>
         </tbody>
       </table>
+      <button @click="startQuiz" :disabled="scores.length === 0">Quiz Me</button>
+    </template>
+
+    <template v-if="quizMode">
+      <h2>Quiz</h2>
+      <p>Enter the number for each phrase:</p>
+      <ul>
+        <li v-for="(scoreItem, index) in scores" :key="index">
+          <p>{{ scoreItem.phrase }}</p>
+          <input type="number" v-model.number="quizAnswers[index]">
+        </li>
+      </ul>
+      <button @click="checkQuizAnswers">Check Answers</button>
+    </template>
+
+    <template v-if="quizResults">
+      <h2>Quiz Results</h2>
+      <ul>
+        <li v-for="(result, index) in quizResults" :key="index">
+          <p>{{ scores[index].phrase }}</p>
+          <p>Your answer: {{ result.userAnswer }}, Correct answer: {{ scores[index].number }}</p>
+          <p>{{ result.isCorrect ? 'Correct!' : 'Incorrect' }}</p>
+        </li>
+      </ul>
+      <button @click="resetQuiz">Back to Scoreboard</button>
     </template>
   </div>
 </template>
