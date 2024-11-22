@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onUnmounted } from 'vue'
-import { Score } from '@/types'
+import { Score, QuizResult } from './types'
 
 const fact = ref('')
 const number = ref(null)
@@ -13,8 +13,8 @@ const scores = ref<Score[]>([])
 const sortKey = ref('score')
 const sortOrder = ref('desc')
 const quizMode = ref(false)
-const quizAnswers = ref([])
-const quizResults = ref(null)
+const quizAnswers = ref<(number | null)[]>([])
+const quizResults = ref<QuizResult[] | null>(null)
 
 // 一个包含短语中所有不同字母的集合
 const phraseLetters = computed(() => new Set(fact.value.replace(/[^a-z]/gi, '').toLowerCase()))
@@ -88,10 +88,6 @@ const guessLetter = (letter: string) => {
   }
 }
 
-const isLetterGuessed = (letter: string) => {
-  return guessedLetters.value.has(letter)
-}
-
 const isLetterCorrect = (letter: string) => {
   return fact.value.toLowerCase().includes(letter.toLowerCase())
 }
@@ -116,7 +112,7 @@ const submitAnswer = () => {
 }
 
 const sortedScores = computed(() => {
-  return scores.value.sort((a, b) => {
+  return scores.value.sort((a: Score, b: Score) => {
     if (sortOrder.value === 'asc') {
       return a[sortKey.value] - b[sortKey.value]
     } else {

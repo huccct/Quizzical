@@ -3,3 +3,8 @@ export interface Score {
   number: number;
   phrase: string;
 }
+
+export interface QuizResult {
+  userAnswer: number | null;
+  isCorrect: boolean;
+}
