@@ -125,12 +125,14 @@ const sortedScores = computed(() => {
       } else {
         return compareStrings(bValue, aValue);
       }
-    } else {
+    } else if (typeof aValue === 'number' && typeof bValue === 'number') {
       if (sortOrder.value === 'asc') {
-        return a[sortKey.value] - b[sortKey.value]
+        return aValue - bValue;
       } else {
-        return b[sortKey.value] - a[sortKey.value]
+        return bValue - aValue;
       }
+    } else {
+      return 0;
     }
   })
 })
