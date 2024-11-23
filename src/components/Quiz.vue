@@ -37,7 +37,7 @@ function checkAnswers() {
           v-model.number="quizAnswers[index]"
           type="number"
           class="number-input"
-          placeholder="Enter number"
+          placeholder="Number"
         >
         <div v-if="showResults" class="result" :class="[results[index].isCorrect ? 'correct' : 'incorrect']">
           {{ results[index].isCorrect
