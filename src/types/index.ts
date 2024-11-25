@@ -9,3 +9,10 @@ export interface QuizResult {
   userAnswer: number | null
   isCorrect: boolean
 }
+
+export interface NumberResponse {
+  text: string
+  number: number
+  type?: string
+  found?: boolean
+}

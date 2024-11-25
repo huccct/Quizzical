@@ -6,11 +6,12 @@ import MainGame from './components/MainGame.vue'
 import Quiz from './components/Quiz.vue'
 
 const scores = ref<Score[]>([])
-const quizMode = ref(false)
+const quizMode = ref<boolean>(false)
 const quizAnswers = ref<(number | null)[]>([])
 const quizResults = ref<QuizResult[] | null>(null)
-const showLeaderboard = ref(true)
-const showScoreboard = ref(true)
+const showLeaderboard = ref<boolean>(true)
+const showScoreboard = ref<boolean>(true)
+const isModalOpen = ref(false)
 
 function loadScores() {
   const storedScores = localStorage.getItem('quizzicalScores')
@@ -47,41 +48,52 @@ function handleStartGame() {
   showLeaderboard.value = false
 }
 
+function handleModalState(state: boolean) {
+  isModalOpen.value = state
+}
+
 loadScores()
 </script>
 
 <template>
-  <MainGame v-if="!quizMode && !quizResults" @save-score="saveScore" @start-game="handleStartGame" />
-  <LeaderBoard
-    v-if="showLeaderboard"
-    :scores="scores"
-    :quiz-answers="quizAnswers"
-    :show-scoreboard="showScoreboard"
-    @start-quiz="startQuiz"
-  />
-  <Quiz
-    v-if="quizMode"
-    :scores="scores"
-    :quiz-answers="quizAnswers"
-    @check-quiz-answers="checkQuizAnswers"
-  />
-  <template v-if="quizResults">
-    <div class="quiz-results">
-      <h2>Quiz Results</h2>
-      <ul>
-        <li v-for="(result, index) in quizResults" :key="index">
-          <p>{{ scores[index].phrase }}</p>
-          <p>Your answer: {{ result.userAnswer }}, Correct answer: {{ scores[index].number }}</p>
-          <p :class="{ correct: result.isCorrect }">
-            {{ result.isCorrect ? 'Correct!' : 'Incorrect' }}
-          </p>
-        </li>
-      </ul>
-      <button @click="resetQuiz">
-        Back to Scoreboard
-      </button>
-    </div>
-  </template>
+  <div :class="{ 'modal-open': isModalOpen }">
+    <MainGame 
+      v-if="!quizMode && !quizResults" 
+      @save-score="saveScore" 
+      @start-game="handleStartGame"
+      @update-modal="handleModalState"
+    />
+    <LeaderBoard
+      v-if="showLeaderboard"
+      :scores="scores"
+      :quiz-answers="quizAnswers"
+      :show-scoreboard="showScoreboard"
+      @start-quiz="startQuiz"
+    />
+    <Quiz
+      v-if="quizMode"
+      :scores="scores"
+      :quiz-answers="quizAnswers"
+      @check-quiz-answers="checkQuizAnswers"
+    />
+    <template v-if="quizResults">
+      <div class="quiz-results">
+        <h2>Quiz Results</h2>
+        <ul>
+          <li v-for="(result, index) in quizResults" :key="index">
+            <p>{{ scores[index].phrase }}</p>
+            <p>Your answer: {{ result.userAnswer }}, Correct answer: {{ scores[index].number }}</p>
+            <p :class="{ correct: result.isCorrect }">
+              {{ result.isCorrect ? 'Correct!' : 'Incorrect' }}
+            </p>
+          </li>
+        </ul>
+        <button @click="resetQuiz">
+          Back to Scoreboard
+        </button>
+      </div>
+    </template>
+  </div>
 </template>
 
 <style scoped>
@@ -153,5 +165,14 @@ button:hover {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+}
+
+.modal-open {
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 0;
 }
 </style>

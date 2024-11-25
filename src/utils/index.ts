@@ -1,20 +1,11 @@
-export async function getRandomTriviaLocal() {
-  return fetch('/localtrivia.json')
-    .then(resp => resp.json())
-    .then((data) => {
-      const index = Math.floor(Math.random() * data.length)
-      return data[index]
-    })
+async function getRandomLocal(path: string) {
+  const resp = await fetch(path)
+  const data = await resp.json()
+  return data[Math.floor(Math.random() * data.length)]
 }
 
-export async function getRandomMathLocal() {
-  return fetch('/localmath.json')
-    .then(resp => resp.json())
-    .then((data) => {
-      const index = Math.floor(Math.random() * data.length)
-      return data[index]
-    })
-}
+export const getRandomTriviaLocal = () => getRandomLocal('/localtrivia.json')
+export const getRandomMathLocal = () => getRandomLocal('/localmath.json')
 
 export function compareStrings(a: string, b: string): number {
   return a.localeCompare(b)

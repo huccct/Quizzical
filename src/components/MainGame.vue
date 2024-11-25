@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import type { Score } from '../types'
+import type { NumberResponse, Score } from '../types'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { getRandomMathLocal, getRandomTriviaLocal } from '../utils'
 
 const emit = defineEmits<{
   (e: 'saveScore', score: Score): void
   (e: 'startGame'): void
+  (e: 'updateModal', state: boolean): void
 }>()
 
 const fact = ref('')
-const number = ref(null)
+const number = ref()
 const revealed = ref('')
 const inputNumber = ref(null)
 const score = ref(26)
@@ -17,9 +18,9 @@ const guessedLetters = ref(new Set())
 const showRes = ref(false)
 const resultMessage = ref('')
 const resultType = ref<'success' | 'partial' | 'failure'>('success')
-const showResultModal = ref(false)
 const tipMessage = ref('')
 const showTip = ref(false)
+const showResultModal = ref(false)
 
 const phraseLetters = computed(() => new Set(fact.value.replace(/[^a-z]/gi, '').toLowerCase()))
 
@@ -28,33 +29,38 @@ const nonPhraseLetters = computed(() => {
   return allLetters.split('').filter(letter => !phraseLetters.value.has(letter))
 })
 
+/**
+ * Fetch data from the numbers API.
+ */
 async function fetchData() {
+  const initGame = (data: NumberResponse) => {
+    fact.value = data.text
+    number.value = data.number
+    revealed.value = fact.value.replace(/[a-z]/gi, '_')
+    guessedLetters.value = new Set()
+    score.value = 26
+    showRes.value = false
+    inputNumber.value = null
+    showResultModal.value = false
+    emit('startGame')
+  }
   try {
     const res = await fetch('http://numbersapi.com/random/math?json&fragment')
     const data = await res.json()
-    fact.value = data.text
-    number.value = data.number
-    revealed.value = fact.value.replace(/[a-z]/gi, '_')
-    guessedLetters.value = new Set()
-    score.value = 26
-    showRes.value = false
-    inputNumber.value = null
-    emit('startGame')
+    initGame(data)
   }
   catch {
+    // mock local data if the numbers API is down
     const localFetch = Math.random() < 0.5 ? getRandomTriviaLocal : getRandomMathLocal
     const data = await localFetch()
-    fact.value = data.text
-    number.value = data.number
-    revealed.value = fact.value.replace(/[a-z]/gi, '_')
-    guessedLetters.value = new Set()
-    score.value = 26
-    showRes.value = false
-    inputNumber.value = null
-    emit('startGame')
+    initGame(data)
   }
 }
 
+/**
+ * Guess a letter if user guesses a letter that is in the phrase.
+ * @param letter - The letter to guess.
+ */
 function guessLetter(letter: string) {
   if (!revealed.value) {
     revealed.value = fact.value.replace(/[a-z]/gi, '_')
@@ -63,6 +69,7 @@ function guessLetter(letter: string) {
   revealed.value = fact.value.replace(/[a-z]/gi, match =>
     guessedLetters.value.has(match.toLowerCase()) ? match : '_')
 
+  // calculate score
   if (!fact.value.toLowerCase().includes(letter.toLowerCase())) {
     score.value = Math.max(score.value - 26 / nonPhraseLetters.value.length, 0)
     tipMessage.value = `Oops! "${letter}" is not in the phrase. -${(26 / nonPhraseLetters.value.length).toFixed(2)} points`
@@ -74,7 +81,7 @@ function guessLetter(letter: string) {
   showTip.value = true
   setTimeout(() => {
     showTip.value = false
-  }, 2000)
+  }, 3000)
 }
 
 function isLetterCorrect(letter: string) {
@@ -106,19 +113,25 @@ function submitAnswer() {
     score.value = 0
   }
 
-  showResultModal.value = true
   showRes.value = true
   inputNumber.value = null
+  showResultModal.value = true
   emit('saveScore', {
     score: score.value,
     number: number.value!,
     phrase: fact.value,
   })
+  emit('updateModal', true)
+}
+
+function closeModal() {
+  showResultModal.value = false
+  emit('updateModal', false)
 }
 
 function handleKeyPress(event: KeyboardEvent) {
   const letter = event.key.toLowerCase()
-  if (/^[a-z]$/.test(letter) && !guessedLetters.value.has(letter)) {
+  if (!showRes.value && /^[a-z]$/.test(letter) && !guessedLetters.value.has(letter)) {
     guessLetter(letter)
   }
 }
@@ -146,7 +159,7 @@ onUnmounted(() => {
         v-for="letter in 'abcdefghijklm'" :key="letter" :class="{
           correct: guessedLetters.has(letter) && isLetterCorrect(letter),
           incorrect: guessedLetters.has(letter) && !isLetterCorrect(letter),
-        }" :disabled="guessedLetters.has(letter)" @click="guessLetter(letter)"
+        }" :disabled="guessedLetters.has(letter) || showRes" @click="guessLetter(letter)"
       >
         <span :class="{ strikethrough: guessedLetters.has(letter) }">
           {{ letter }}
@@ -159,7 +172,7 @@ onUnmounted(() => {
         v-for="letter in 'nopqrstuvwxyz'" :key="letter" :class="{
           correct: guessedLetters.has(letter) && isLetterCorrect(letter),
           incorrect: guessedLetters.has(letter) && !isLetterCorrect(letter),
-        }" :disabled="guessedLetters.has(letter)" @click="guessLetter(letter)"
+        }" :disabled="guessedLetters.has(letter) || showRes" @click="guessLetter(letter)"
       >
         <span :class="{ strikethrough: guessedLetters.has(letter) }">
           {{ letter }}
@@ -208,7 +221,7 @@ onUnmounted(() => {
         <p class="final-score">
           Final Score: {{ score.toFixed(2) }}
         </p>
-        <button class="btn" @click="showResultModal = false">
+        <button class="btn" @click="closeModal">
           Close
         </button>
       </div>
@@ -409,7 +422,7 @@ h1 {
   padding: 2rem;
   border-radius: 8px;
   max-width: 500px;
-  width: 90%;
+  width: 70%;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
