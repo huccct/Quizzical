@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { QuizResult, Score } from './types'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import LeaderBoard from './components/LeaderBoard.vue'
 import MainGame from './components/MainGame.vue'
 import Quiz from './components/Quiz.vue'
@@ -13,24 +13,36 @@ const showLeaderboard = ref<boolean>(true)
 const showScoreboard = ref<boolean>(true)
 const isModalOpen = ref(false)
 
+/**
+ * Load the scores from local storage.
+ */
 function loadScores() {
   const storedScores = localStorage.getItem('quizzicalScores')
   if (storedScores)
     scores.value = JSON.parse(storedScores)
 }
 
+/**
+ * Save the score to local storage.
+ * @param score - The score to save.
+ */
 function saveScore(score: Score) {
   scores.value.push(score)
-  localStorage.setItem('quizzicalScores', JSON.stringify(scores.value))
   showLeaderboard.value = true
   showScoreboard.value = true
 }
 
+/**
+ * Start the quiz.
+ */
 function startQuiz() {
   quizMode.value = true
   quizAnswers.value = Array.from({ length: scores.value.length }, () => null)
 }
 
+/**
+ * Check the quiz answers.
+ */
 function checkQuizAnswers() {
   quizResults.value = quizAnswers.value.map((answer, index) => ({
     userAnswer: answer,
@@ -39,27 +51,43 @@ function checkQuizAnswers() {
   quizMode.value = false
 }
 
+/**
+ * Reset the quiz.
+ */
 function resetQuiz() {
   quizResults.value = null
 }
 
+/**
+ * Handle the start game event.
+ */
 function handleStartGame() {
   showScoreboard.value = false
   showLeaderboard.value = false
 }
 
+/**
+ * Handle the modal state.
+ * @param state - The state to set.
+ */
 function handleModalState(state: boolean) {
   isModalOpen.value = state
 }
 
-loadScores()
+watch(scores, (newScores) => {
+  localStorage.setItem('quizzicalScores', JSON.stringify(newScores))
+}, { deep: true })
+
+onMounted(() => {
+  loadScores()
+})
 </script>
 
 <template>
   <div :class="{ 'modal-open': isModalOpen }">
-    <MainGame 
-      v-if="!quizMode && !quizResults" 
-      @save-score="saveScore" 
+    <MainGame
+      v-if="!quizMode && !quizResults"
+      @save-score="saveScore"
       @start-game="handleStartGame"
       @update-modal="handleModalState"
     />
