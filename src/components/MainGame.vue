@@ -84,18 +84,31 @@ function guessLetter(letter: string) {
   }, 3000)
 }
 
+/**
+ * Check if the letter is correct.
+ * @param letter - The letter to check.
+ * @returns True if the letter is correct, false otherwise.
+ */
 function isLetterCorrect(letter: string) {
   return fact.value.toLowerCase().includes(letter.toLowerCase())
 }
 
+/**
+ * Submit the answer.
+ */
 function submitAnswer() {
   const gotPhrase = revealed.value.toLowerCase() === fact.value.toLowerCase()
   const gotNumber = inputNumber.value === number.value
 
+  // if got phrase or number, add 2 points to the score
+  if (gotPhrase)
+    score.value = Math.min(score.value + 2, 30)
+  if (gotNumber)
+    score.value = Math.min(score.value + 2, 30)
+
   if (gotPhrase && gotNumber) {
     resultMessage.value = 'Congratulations! You got both the phrase and number correct!'
     resultType.value = 'success'
-    score.value = Math.min(score.value + 4, 30)
   }
   else if (gotPhrase) {
     resultMessage.value = `You got the phrase correct, but the number was wrong. The correct number was ${number.value}.`
@@ -124,11 +137,18 @@ function submitAnswer() {
   emit('updateModal', true)
 }
 
+/**
+ * Close the result modal.
+ */
 function closeModal() {
   showResultModal.value = false
   emit('updateModal', false)
 }
 
+/**
+ * Handle key press events(accessibility).
+ * @param event - The keyboard event.
+ */
 function handleKeyPress(event: KeyboardEvent) {
   const letter = event.key.toLowerCase()
   if (!showRes.value && /^[a-z]$/.test(letter) && !guessedLetters.value.has(letter)) {

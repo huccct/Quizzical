@@ -13,10 +13,14 @@ const emit = defineEmits<{
 
 const showResults = ref(false)
 const results = ref<{ isCorrect: boolean, correctAnswer: number }[]>([])
+const localAnswers = ref([...props.quizAnswers])
 
+/**
+ * Check the quiz answers.
+ */
 function checkAnswers() {
   results.value = props.scores.map((score, index) => ({
-    isCorrect: props.quizAnswers[index] === score.number,
+    isCorrect: localAnswers.value[index] === score.number,
     correctAnswer: score.number,
   }))
   showResults.value = true
@@ -34,7 +38,7 @@ function checkAnswers() {
           {{ scoreItem.phrase }}
         </div>
         <input
-          v-model.number="quizAnswers[index]"
+          v-model.number="localAnswers[index]"
           type="number"
           class="number-input"
           placeholder="Number"

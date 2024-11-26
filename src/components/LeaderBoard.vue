@@ -16,11 +16,15 @@ const emit = defineEmits<{
 }>()
 
 const sortKey = ref('score')
-const sortOrder = ref('desc')
+const sortOrder = ref('asc')
 const showQuiz = ref(false)
 const quizAnswers = ref<(number | null)[]>([])
 const showResults = ref(false)
 
+/**
+ * Get the sorted scores.
+ * @returns The sorted scores.
+ */
 const sortedScores = computed(() => {
   return [...props.scores].sort((a: Score, b: Score) => {
     const aValue = a[sortKey.value]
@@ -38,6 +42,9 @@ const sortedScores = computed(() => {
   })
 })
 
+/**
+ * Toggle the quiz.
+ */
 function toggleQuiz() {
   showQuiz.value = !showQuiz.value
   if (showQuiz.value) {
@@ -45,6 +52,9 @@ function toggleQuiz() {
   }
 }
 
+/**
+ * Check the quiz answers.
+ */
 function checkAnswers() {
   showResults.value = true
   emit('checkQuizAnswers')
