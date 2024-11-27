@@ -20,6 +20,8 @@ const sortOrder = ref('asc')
 const showQuiz = ref(false)
 const quizAnswers = ref<(number | null)[]>([])
 const showResults = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = 5
 
 /**
  * Get the sorted scores.
@@ -42,6 +44,14 @@ const sortedScores = computed(() => {
   })
 })
 
+const paginatedScores = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return sortedScores.value.slice(start, end)
+})
+
+const totalPages = computed(() => Math.ceil(props.scores.length / itemsPerPage))
+
 /**
  * Toggle the quiz.
  */
@@ -58,6 +68,10 @@ function toggleQuiz() {
 function checkAnswers() {
   showResults.value = true
   emit('checkQuizAnswers')
+}
+
+function changePage(page: number) {
+  currentPage.value = page
 }
 </script>
 
@@ -103,13 +117,31 @@ function checkAnswers() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(scoreItem, index) in sortedScores" :key="index">
+          <tr v-for="(scoreItem, index) in paginatedScores" :key="index">
             <td>{{ scoreItem.score.toFixed(2) }}</td>
             <td>{{ scoreItem.number }}</td>
             <td>{{ scoreItem.phrase }}</td>
           </tr>
         </tbody>
       </table>
+
+      <div class="pagination">
+        <button
+          :disabled="currentPage === 1"
+          class="btn pagination-btn"
+          @click="changePage(currentPage - 1)"
+        >
+          Previous
+        </button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button
+          :disabled="currentPage === totalPages"
+          class="btn pagination-btn"
+          @click="changePage(currentPage + 1)"
+        >
+          Next
+        </button>
+      </div>
     </template>
 
     <Quiz v-else :scores="scores" :quiz-answers="quizAnswers" @check-quiz-answers="checkAnswers" />
@@ -249,5 +281,21 @@ tr:hover {
 .result.incorrect {
   background-color: #ffebee;
   color: #c62828;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+}
+
+.pagination span {
+  font-weight: 500;
 }
 </style>

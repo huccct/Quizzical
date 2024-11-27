@@ -21,6 +21,7 @@ const resultType = ref<'success' | 'partial' | 'failure'>('success')
 const tipMessage = ref('')
 const showTip = ref(false)
 const showResultModal = ref(false)
+const inputPhrase = ref('')
 
 const phraseLetters = computed(() => new Set(fact.value.replace(/[^a-z]/gi, '').toLowerCase()))
 
@@ -42,11 +43,13 @@ async function fetchData() {
     showRes.value = false
     inputNumber.value = null
     showResultModal.value = false
+    inputPhrase.value = ''
     emit('startGame')
   }
   try {
     const res = await fetch('http://numbersapi.com/random/math?json&fragment')
     const data = await res.json()
+    console.log(data)
     initGame(data)
   }
   catch {
@@ -97,28 +100,29 @@ function isLetterCorrect(letter: string) {
  * Submit the answer.
  */
 function submitAnswer() {
-  const gotPhrase = revealed.value.toLowerCase() === fact.value.toLowerCase()
+  const gotPhrase = inputPhrase.value.toLowerCase() === fact.value.toLowerCase()
   const gotNumber = inputNumber.value === number.value
 
-  // if got phrase or number, add 2 points to the score
-  if (gotPhrase)
-    score.value = Math.min(score.value + 2, 30)
-  if (gotNumber)
-    score.value = Math.min(score.value + 2, 30)
-
   if (gotPhrase && gotNumber) {
+    score.value = Math.min(score.value + 4, 30)
     resultMessage.value = 'Congratulations! You got both the phrase and number correct!'
     resultType.value = 'success'
   }
-  else if (gotPhrase) {
-    resultMessage.value = `You got the phrase correct, but the number was wrong. The correct number was ${number.value}.`
-    resultType.value = 'partial'
-    score.value = Math.floor(score.value / 2)
-  }
-  else if (gotNumber) {
-    resultMessage.value = `You got the number correct, but the phrase was wrong. The correct phrase was "${fact.value}".`
-    resultType.value = 'partial'
-    score.value = Math.floor(score.value / 2)
+  else if (gotPhrase || gotNumber) {
+    // 先加分
+    if (gotPhrase || gotNumber)
+      score.value = Math.min(score.value + 2, 30)
+    // 再除以2
+    score.value = score.value / 2
+
+    if (gotPhrase) {
+      resultMessage.value = `You got the phrase correct, but the number was wrong. The correct number was ${number.value}.`
+      resultType.value = 'partial'
+    }
+    else {
+      resultMessage.value = `You got the number correct, but the phrase was wrong. The correct phrase was "${fact.value}".`
+      resultType.value = 'partial'
+    }
   }
   else {
     resultMessage.value = `Sorry, both were wrong. The correct answer was: ${number.value} is ${fact.value}`
@@ -154,6 +158,27 @@ function handleKeyPress(event: KeyboardEvent) {
   if (!showRes.value && /^[a-z]$/.test(letter) && !guessedLetters.value.has(letter)) {
     guessLetter(letter)
   }
+}
+
+/**
+ * Copy the revealed text to the clipboard.
+ */
+function copyRevealedText() {
+  navigator.clipboard.writeText(revealed.value)
+    .then(() => {
+      tipMessage.value = 'Text copied to clipboard!'
+      showTip.value = true
+      setTimeout(() => {
+        showTip.value = false
+      }, 3000)
+    })
+    .catch(() => {
+      tipMessage.value = 'Failed to copy text'
+      showTip.value = true
+      setTimeout(() => {
+        showTip.value = false
+      }, 3000)
+    })
 }
 
 onMounted(() => {
@@ -207,8 +232,14 @@ onUnmounted(() => {
         <div class="section-header">
           Clue
         </div>
-        <div class="phrase">
-          {{ revealed }}
+        <div class="phrase-container">
+          <button class="btn-copy" @click="copyRevealedText">
+            <span class="sr-only">复制提示文字</span>
+            📋
+          </button>
+          <div class="phrase">
+            {{ revealed }}
+          </div>
         </div>
       </div>
 
@@ -220,9 +251,13 @@ onUnmounted(() => {
           <label for="number-input" class="sr-only">Enter the number</label>
           <input id="number-input" v-model="inputNumber" type="number" placeholder="Number">
           <span class="is-text">is</span>
-          <div class="phrase">
-            {{ revealed }}
-          </div>
+          <label for="phrase-input" class="sr-only">Enter the phrase</label>
+          <input
+            id="phrase-input"
+            v-model="inputPhrase"
+            type="text"
+            class="phrase-input"
+          >
         </div>
       </div>
 
@@ -249,9 +284,11 @@ onUnmounted(() => {
     </div>
 
     <div
-      v-if="showTip" class="tip-message" :class="{
-        'tip-correct': tipMessage.includes('Good guess'),
-        'tip-incorrect': !tipMessage.includes('Good guess'),
+      v-if="showTip"
+      class="tip-message"
+      :class="{
+        'tip-correct': tipMessage.includes('Good guess') || tipMessage.includes('copied'),
+        'tip-incorrect': !tipMessage.includes('Good guess') && !tipMessage.includes('copied'),
       }"
     >
       {{ tipMessage }}
@@ -524,5 +561,29 @@ h1 {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.phrase-container {
+  position: relative;
+}
+
+.btn-copy {
+  position: absolute;
+  right: 0;
+  top: -50px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.btn-copy:hover {
+  background: #f0f0f0;
+}
+
+.input-group .phrase-input {
+  width: 375px;
 }
 </style>
