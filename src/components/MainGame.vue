@@ -217,6 +217,7 @@ onUnmounted(() => {
           Answer
         </div>
         <div class="input-group">
+          <label for="number-input" class="sr-only">Enter the number</label>
           <input id="number-input" v-model="inputNumber" type="number" placeholder="Number">
           <span class="is-text">is</span>
           <div class="phrase">
@@ -410,8 +411,8 @@ h1 {
 
 .btn-secondary {
   background: white;
-  border: 2px solid #4776E6;
-  color: #4776E6;
+  border: 2px solid #2851A3;
+  color: #2851A3;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -419,8 +420,8 @@ h1 {
 }
 
 .btn-secondary:disabled {
-  border-color: #ccc;
-  color: #ccc;
+  border-color: #666;
+  color: #666;
   background: white;
 }
 
@@ -511,5 +512,17 @@ h1 {
     transform: translate(-50%, 0);
     opacity: 1;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

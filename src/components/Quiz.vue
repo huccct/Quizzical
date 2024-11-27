@@ -1,60 +1,61 @@
-  <script setup lang="ts">
-  import type { Score } from '../types'
-  import { ref } from 'vue'
+<script setup lang="ts">
+import type { Score } from '../types'
+import { ref } from 'vue'
 
-  const props = defineProps<{
-    scores: Score[]
-    quizAnswers: (number | null)[]
-  }>()
+const props = defineProps<{
+  scores: Score[]
+  quizAnswers: (number | null)[]
+}>()
 
-  const emit = defineEmits<{
-    (e: 'checkQuizAnswers'): void
-  }>()
+const emit = defineEmits<{
+  (e: 'checkQuizAnswers'): void
+}>()
 
-  const showResults = ref(false)
-  const results = ref<{ isCorrect: boolean, correctAnswer: number }[]>([])
-  const localAnswers = ref([...props.quizAnswers])
+const showResults = ref(false)
+const results = ref<{ isCorrect: boolean, correctAnswer: number }[]>([])
+const localAnswers = ref([...props.quizAnswers])
 
-  /**
-   * Check the quiz answers.
-   */
-  function checkAnswers() {
-    results.value = props.scores.map((score, index) => ({
-      isCorrect: localAnswers.value[index] === score.number,
-      correctAnswer: score.number,
-    }))
-    showResults.value = true
-    emit('checkQuizAnswers')
-  }
-  </script>
+/**
+ * Check the quiz answers.
+ */
+function checkAnswers() {
+  results.value = props.scores.map((score, index) => ({
+    isCorrect: localAnswers.value[index] === score.number,
+    correctAnswer: score.number,
+  }))
+  showResults.value = true
+  emit('checkQuizAnswers')
+}
+</script>
 
-  <template>
-    <div class="quiz-container">
-      <h2>Quiz</h2>
-      <p>Enter the number for each phrase:</p>
-      <div class="quiz-list">
-        <div v-for="(scoreItem, index) in scores" :key="index" class="quiz-item">
-          <div class="phrase">
-            {{ scoreItem.phrase }}
-          </div>
-          <input
-            v-model.number="localAnswers[index]"
-            type="number"
-            class="number-input"
-            placeholder="Number"
-          >
-          <div v-if="showResults" class="result" :class="[results[index].isCorrect ? 'correct' : 'incorrect']">
-            {{ results[index].isCorrect
-              ? '✓ Correct!'
-              : `✗ Wrong! The correct answer is ${results[index].correctAnswer}` }}
-          </div>
+<template>
+  <div class="quiz-container">
+    <h2>Quiz</h2>
+    <p>Enter the number for each phrase:</p>
+    <div class="quiz-list">
+      <div v-for="(scoreItem, index) in scores" :key="index" class="quiz-item">
+        <div class="phrase">
+          {{ scoreItem.phrase }}
+        </div>
+        <input
+          v-model.number="localAnswers[index]"
+          type="number"
+          class="number-input"
+          placeholder="Number"
+          :aria-label="`Enter number for phrase: ${scoreItem.phrase}`"
+        >
+        <div v-if="showResults" class="result" :class="[results[index].isCorrect ? 'correct' : 'incorrect']">
+          {{ results[index].isCorrect
+            ? '✓ Correct!'
+            : `✗ Wrong! The correct answer is ${results[index].correctAnswer}` }}
         </div>
       </div>
-      <button class="btn" @click="checkAnswers">
-        Check Answers
-      </button>
     </div>
-  </template>
+    <button class="btn" @click="checkAnswers">
+      Check Answers
+    </button>
+  </div>
+</template>
 
   <style scoped>
   .quiz-container {
