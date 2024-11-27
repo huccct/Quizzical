@@ -49,7 +49,6 @@ async function fetchData() {
   try {
     const res = await fetch('http://numbersapi.com/random/math?json&fragment')
     const data = await res.json()
-    console.log(data)
     initGame(data)
   }
   catch {
