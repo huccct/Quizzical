@@ -72,7 +72,7 @@ function guessLetter(letter: string) {
   // calculate score
   if (!fact.value.toLowerCase().includes(letter.toLowerCase())) {
     score.value = Math.max(score.value - 26 / nonPhraseLetters.value.length, 0)
-    tipMessage.value = `Oops! "${letter}" is not in the phrase. -${(26 / nonPhraseLetters.value.length).toFixed(2)} points`
+    tipMessage.value = `Oops! "${letter}" is not in the phrase.`
   }
   else {
     tipMessage.value = `Good guess! "${letter}" is in the phrase`

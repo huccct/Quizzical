@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { QuizResult, Score } from './types'
 import { onMounted, ref, watch } from 'vue'
+import Footer from './components/Footer.vue'
 import LeaderBoard from './components/LeaderBoard.vue'
 import MainGame from './components/MainGame.vue'
 import Quiz from './components/Quiz.vue'
@@ -12,6 +13,7 @@ const quizResults = ref<QuizResult[] | null>(null)
 const showLeaderboard = ref<boolean>(true)
 const showScoreboard = ref<boolean>(true)
 const isModalOpen = ref(false)
+const isDark = ref(localStorage.getItem('theme') === 'dark')
 
 /**
  * Load the scores from local storage.
@@ -84,7 +86,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :class="{ 'modal-open': isModalOpen }">
+  <div class="app-container" :class="{ dark: isDark }">
     <MainGame
       v-if="!quizMode && !quizResults"
       @save-score="saveScore"
@@ -121,6 +123,7 @@ onMounted(() => {
         </button>
       </div>
     </template>
+    <Footer />
   </div>
 </template>
 
