@@ -44,12 +44,19 @@ const sortedScores = computed(() => {
   })
 })
 
+/**
+ * Get the paginated scores.
+ * @returns The paginated scores.
+ */
 const paginatedScores = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
   return sortedScores.value.slice(start, end)
 })
 
+/**
+ * Get the total pages.
+ */
 const totalPages = computed(() => Math.ceil(props.scores.length / itemsPerPage))
 
 /**
@@ -70,6 +77,10 @@ function checkAnswers() {
   emit('checkQuizAnswers')
 }
 
+/**
+ * Change the page.
+ * @param page - The page number.
+ */
 function changePage(page: number) {
   currentPage.value = page
 }

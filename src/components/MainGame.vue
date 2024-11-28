@@ -34,6 +34,7 @@ const nonPhraseLetters = computed(() => {
  * Fetch data from the numbers API.
  */
 async function fetchData() {
+  // initialize the game
   const initGame = (data: NumberResponse) => {
     fact.value = data.text
     number.value = data.number
@@ -108,10 +109,10 @@ function submitAnswer() {
     resultType.value = 'success'
   }
   else if (gotPhrase || gotNumber) {
-    // 先加分
+    // add 2 points
     if (gotPhrase || gotNumber)
       score.value = Math.min(score.value + 2, 30)
-    // 再除以2
+    // divide by 2
     score.value = score.value / 2
 
     if (gotPhrase) {
@@ -273,9 +274,9 @@ onUnmounted(() => {
       <div class="result-content" :class="resultType">
         <h2>Game Result</h2>
         <p>{{ resultMessage }}</p>
-        <p class="final-score">
+        <h3 class="final-score">
           Final Score: {{ score.toFixed(2) }}
-        </p>
+        </h3>
         <button class="btn" @click="closeModal">
           Close
         </button>

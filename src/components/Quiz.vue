@@ -23,6 +23,7 @@ const paginatedScores = computed(() => {
   return props.scores.slice(start, start + itemsPerPage)
 })
 
+// computed property for total pages
 const totalPages = computed(() => Math.ceil(props.scores.length / itemsPerPage))
 
 /**
@@ -33,6 +34,9 @@ function nextPage() {
     currentPage.value++
 }
 
+/**
+ * Go to the previous page.
+ */
 function prevPage() {
   if (currentPage.value > 0)
     currentPage.value--
