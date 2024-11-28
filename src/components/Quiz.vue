@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Score } from '../types'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
   scores: Score[]
@@ -14,6 +14,29 @@ const emit = defineEmits<{
 const showResults = ref(false)
 const results = ref<{ isCorrect: boolean, correctAnswer: number }[]>([])
 const localAnswers = ref([...props.quizAnswers])
+const currentPage = ref(0)
+const itemsPerPage = 5
+
+// Computed property for paginated scores
+const paginatedScores = computed(() => {
+  const start = currentPage.value * itemsPerPage
+  return props.scores.slice(start, start + itemsPerPage)
+})
+
+const totalPages = computed(() => Math.ceil(props.scores.length / itemsPerPage))
+
+/**
+ * Go to the next page.
+ */
+function nextPage() {
+  if (currentPage.value < totalPages.value - 1)
+    currentPage.value++
+}
+
+function prevPage() {
+  if (currentPage.value > 0)
+    currentPage.value--
+}
 
 /**
  * Check the quiz answers.
@@ -33,24 +56,44 @@ function checkAnswers() {
     <h2>Quiz</h2>
     <p>Enter the number for each phrase:</p>
     <div class="quiz-list">
-      <div v-for="(scoreItem, index) in scores" :key="index" class="quiz-item">
+      <div v-for="(scoreItem, index) in paginatedScores" :key="index" class="quiz-item">
         <div class="phrase">
           {{ scoreItem.phrase }}
         </div>
         <input
-          v-model.number="localAnswers[index]"
+          v-model.number="localAnswers[index + currentPage * itemsPerPage]"
           type="number"
           class="number-input"
           placeholder="Number"
           :aria-label="`Enter number for phrase: ${scoreItem.phrase}`"
         >
-        <div v-if="showResults" class="result" :class="[results[index].isCorrect ? 'correct' : 'incorrect']">
-          {{ results[index].isCorrect
+        <div v-if="showResults" class="result" :class="[results[index + currentPage * itemsPerPage].isCorrect ? 'correct' : 'incorrect']">
+          {{ results[index + currentPage * itemsPerPage].isCorrect
             ? '✓ Correct!'
-            : `✗ Wrong! The correct answer is ${results[index].correctAnswer}` }}
+            : `✗ Wrong! The correct answer is ${results[index + currentPage * itemsPerPage].correctAnswer}` }}
         </div>
       </div>
     </div>
+
+    <!-- Add pagination controls -->
+    <div class="pagination-controls">
+      <button
+        class="btn pagination-btn"
+        :disabled="currentPage === 0"
+        @click="prevPage"
+      >
+        Previous
+      </button>
+      <span class="page-info">Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+      <button
+        class="btn pagination-btn"
+        :disabled="currentPage === totalPages - 1"
+        @click="nextPage"
+      >
+        Next
+      </button>
+    </div>
+
     <button class="btn" @click="checkAnswers">
       Check Answers
     </button>
@@ -142,5 +185,27 @@ function checkAnswers() {
   .result.incorrect {
     background-color: #ffebee;
     color: #c62828;
+  }
+
+  .pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  .pagination-btn {
+    padding: 0.5rem 1rem;
+  }
+
+  .pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .page-info {
+    font-size: 0.9rem;
+    color: #666;
   }
   </style>
